@@ -292,8 +292,8 @@ float FlangerAudioProcessor::lfo(int ph, int waveform) {
 void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
 
-    const int numInputChannels = getNumInputChannels();     // How many input channels for our effect?
-    const int numOutputChannels = getNumOutputChannels();   // How many output channels for our effect?
+    const int numInputChannels = getTotalNumInputChannels();    // How many input channels for our effect?
+    const int numOutputChannels = getTotalNumOutputChannels();  // How many output channels for our effect?
     const int numSamples = buffer.getNumSamples();          // How many samples in the buffer for this block?
 
     int channel, dpw; // dpr = delay read pointer; dpw = delay write pointer
