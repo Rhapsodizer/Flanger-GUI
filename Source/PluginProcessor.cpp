@@ -7,6 +7,9 @@ This file contains the basic framework code for a JUCE plugin processor.
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+const float FlangerAudioProcessor::kMaximumDelay = 0.02;
+const float FlangerAudioProcessor::kMaximumSweepWidth = 0.02;
+
 //==============================================================================
 FlangerAudioProcessor::FlangerAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -195,7 +198,7 @@ void FlangerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock
     // Use this method as the place to do any pre-playback initialisation that you need..
 
     // Retrieve the delay buffer length from the sample rate
-    delayBufferLength = (int)(2 * sampleRate);
+    delayBufferLength = (int)((kMaximumDelay + kMaximumSweepWidth) * sampleRate) + 3;
     // non-zero length check
     if (delayBufferLength < 1) {
         delayBufferLength = 1;

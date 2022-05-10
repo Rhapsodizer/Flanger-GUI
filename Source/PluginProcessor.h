@@ -55,6 +55,9 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
+    static const float kMaximumDelay;
+    static const float kMaximumSweepWidth;
+
     // LFO function
     float FlangerAudioProcessor::lfo(int ph, int waveform);
 
