@@ -15,8 +15,6 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
 {
 
     // LFO Sweep (Amplitude)
-    sweepSlider.setRange(0.0, 1.0);
-    sweepSlider.setValue(0.7);
     sweepSlider.setSliderStyle(juce::Slider::Rotary);
     sweepSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
     sweepSlider.addListener(this);
@@ -27,8 +25,6 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     addAndMakeVisible(sweepLabel);
 
     // LFO Speed (Frequency)
-    speedSlider.setRange(0.0, 10.0);
-    speedSlider.setValue(2.0);
     speedSlider.setSliderStyle(juce::Slider::Rotary);
     speedSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
     speedSlider.addListener(this);
@@ -43,7 +39,7 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     waveSelector.addItem("Tri", 2);
     waveSelector.addItem("Sqr", 3);
     waveSelector.addItem("Saw", 4);
-    waveSelector.onChange = [this] { audioProcessor.setParameter(5, waveSelector.getSelectedId()-1); };
+    //waveSelector.onChange = [this] { audioProcessor.setParameter(5, waveSelector.getSelectedId()-1); };
     waveSelector.setSelectedId(1);
 
     waveSelectorLabel.setText("LFO Type", juce::dontSendNotification);
@@ -55,7 +51,7 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     interpolSelector.addItem("Lin", 1);
     interpolSelector.addItem("Sqr", 2);
     interpolSelector.addItem("Cub", 3);
-    interpolSelector.onChange = [this] { audioProcessor.setParameter(6, interpolSelector.getSelectedId()-1); };
+    //interpolSelector.onChange = [this] { audioProcessor.setParameter(6, interpolSelector.getSelectedId()-1); };
     interpolSelector.setSelectedId(1);
 
     interpolSelectorLabel.setText("Interpolation", juce::dontSendNotification);
@@ -64,7 +60,6 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     addAndMakeVisible(interpolSelectorLabel);
 
     // Delay
-    delaySlider.setRange(5.0, 20.0);
     delaySlider.setSliderStyle(juce::Slider::Rotary);
     delaySlider.setTextBoxStyle(juce::Slider::TextBoxAbove, false, 100, 20);
     delaySlider.addListener(this);
@@ -75,7 +70,6 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     addAndMakeVisible(delayLabel);
 
     // Feedforward gain
-    gSlider.setRange(0.0, 1.0);
     gSlider.setSliderStyle(juce::Slider::Rotary);
     gSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
     gSlider.addListener(this);
@@ -86,7 +80,6 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     addAndMakeVisible(gLabel);
 
     // Feedback gain
-    fbSlider.setRange(0.0, 0.99);
     fbSlider.setSliderStyle(juce::Slider::Rotary);
     fbSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
     fbSlider.addListener(this);
@@ -115,6 +108,14 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
 
     // Window size
     setSize(800, 600);
+
+    sweepCall = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "SWEEP", sweepSlider);
+    speedCall = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "SPEED", speedSlider);
+    delayCall = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "DELAY", delaySlider);
+    fbCall = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "FB", fbSlider);
+    gCall = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "FF", gSlider);
+    waveSelectorCall = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.apvts, "WAVE", waveSelector);
+    interpolSelectorCall = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.apvts, "INTERPOL", interpolSelector);
 }
 
 FlangerAudioProcessorEditor::~FlangerAudioProcessorEditor()
@@ -174,9 +175,9 @@ void FlangerAudioProcessorEditor::resized()
 
 void FlangerAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 {
-    if (slider == &delaySlider) { audioProcessor.setParameter(0, delaySlider.getValue()); }
-    else if (slider == &sweepSlider) { audioProcessor.setParameter(1, sweepSlider.getValue()); }
-    else if (slider == &gSlider) { audioProcessor.setParameter(2, gSlider.getValue()); }
-    else if (slider == &fbSlider) { audioProcessor.setParameter(3, fbSlider.getValue()); }
-    else if (slider == &speedSlider) { audioProcessor.setParameter(4, speedSlider.getValue()); }
+    //if (slider == &delaySlider) { audioProcessor.setParameter(0, delaySlider.getValue()); }
+    //else if (slider == &sweepSlider) { audioProcessor.setParameter(1, sweepSlider.getValue()); }
+    //else if (slider == &gSlider) { audioProcessor.setParameter(2, gSlider.getValue()); }
+    //else if (slider == &fbSlider) { audioProcessor.setParameter(3, fbSlider.getValue()); }
+    //else if (slider == &speedSlider) { audioProcessor.setParameter(4, speedSlider.getValue()); }
 }

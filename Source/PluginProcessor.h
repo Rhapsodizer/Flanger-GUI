@@ -58,6 +58,8 @@ public:
     static const float kMaximumDelay;
     static const float kMaximumSweepWidth;
 
+    juce::AudioProcessorValueTreeState apvts;
+
     // LFO function
     float FlangerAudioProcessor::lfo(int ph, int waveform);
 
@@ -77,6 +79,8 @@ public:
 private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FlangerAudioProcessor)
+
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameters();
 
     // Variables for the delay circular buffer: length, actual circular buffer, read and write pointers
     int delayBufferLength;

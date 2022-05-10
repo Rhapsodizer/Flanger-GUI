@@ -29,6 +29,8 @@ private:
     // access the processor object that created it.
     FlangerAudioProcessor& audioProcessor;
 
+    //juce::AudioProcessorValueTreeState::ParameterLayout createParameters();
+
     juce::Slider sweepSlider;
     juce::Label sweepLabel;
 
@@ -54,6 +56,14 @@ private:
 
     juce::Slider gSlider;
     juce::Label gLabel;
+
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sweepCall;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> speedCall;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> delayCall;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> fbCall;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> gCall;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> waveSelectorCall;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> interpolSelectorCall;
 
     void sliderValueChanged(juce::Slider* slider) override;
 
