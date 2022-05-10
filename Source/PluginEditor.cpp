@@ -64,7 +64,7 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     addAndMakeVisible(interpolSelectorLabel);
 
     // Delay
-    delaySlider.setRange(5.0, 25.0);
+    delaySlider.setRange(5.0, 20.0);
     delaySlider.setSliderStyle(juce::Slider::Rotary);
     delaySlider.setTextBoxStyle(juce::Slider::TextBoxAbove, false, 100, 20);
     delaySlider.addListener(this);
