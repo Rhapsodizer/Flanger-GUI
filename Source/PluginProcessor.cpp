@@ -20,9 +20,6 @@ FlangerAudioProcessor::FlangerAudioProcessor()
     )
 #endif
 {
-    // Read and Write pointers initialized
-    delayBufferRead = 1;
-    delayBufferWrite = 0;
 
 }
 
@@ -213,8 +210,10 @@ void FlangerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock
 
     wave = 0;
     interpol = 0;
+
+    // Read and Write pointers initialized
+    delayBufferRead = 1;
     delayBufferWrite = 0;
-    delayBufferRead = 0;
 }
 
 void FlangerAudioProcessor::releaseResources()
@@ -296,6 +295,15 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     const int numOutputChannels = getTotalNumOutputChannels();  // How many output channels for our effect?
     const int numSamples = buffer.getNumSamples();          // How many samples in the buffer for this block?
 
+    // In case we have more outputs than inputs, this code clears any output
+    // channels that didn't contain input data, (because these aren't
+    // guaranteed to be empty - they may contain garbage).
+    // This is here to avoid people getting screaming feedback
+    // when they first compile a plugin, but obviously you don't need to keep
+    // this code if your algorithm always overwrites all the output channels.
+    for (auto i = numInputChannels; i < numOutputChannels; ++i)
+        buffer.clear(i, 0, buffer.getNumSamples());
+
     int channel, dpw; // dpr = delay read pointer; dpw = delay write pointer
     float dpr, currentDelay, ph;
     float channel0EndPhase = lfoPhase;
@@ -319,6 +327,7 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
         dpw = delayBufferWrite;
         dpr = delayBufferRead;
         ph = lfoPhase;
+        /*
         float speedP = speed;
         float delayP = delay;
         float wetP = wet;
@@ -330,9 +339,10 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
         int interpolP = interpol;
         int waveP = wave;
         int stereoP = stereo;
+        */
 
         // For stereo flanging, keep the channels 90 degrees out of phase with each other
-        if (stereoP != 0 && channel != 0)
+        if (stereo != 0 && channel != 0)
             ph = fmodf(ph + 0.25, 1.0);
 
         for (int i = 0; i < numSamples; ++i) {
@@ -345,7 +355,7 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             // running the whole equation again, but this format makes the operation clearer.
 
             //FUNZIONE LFO DA IMPLEMENTARE, wave parametro della funzione (mancante)
-            currentDelay = delayP + sweepP * lfo(ph, waveP);
+            currentDelay = delay + sweep * lfo(ph, wave);
             dpr = fmodf((float)dpw - (float)(currentDelay * getSampleRate()) + (float)delayBufferLength,
                 (float)delayBufferLength);
 
@@ -355,7 +365,7 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             // In this example, the output is the input plus the contents of the delay buffer (weighted by delayMix)
             // The last term implements a tremolo (variable amplitude) on the whole thing.
 
-            if (interpolP == kLinear) {
+            if (interpol == kLinear) {
 
                 // Find the fraction by which the read pointer sits between two
                 // samples and use this to adjust weights of the samples
@@ -365,7 +375,7 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
                 interpolatedSample = fraction * delayData[nextSample]
                     + (1.0f - fraction) * delayData[previousSample];
             }
-            else if (interpolP == kQuadratic) {
+            else if (interpol == kQuadratic) {
                 int sample1 = (int)floorf(dpr);
                 int sample2 = (sample1 + 1) % delayBufferLength;
                 int sample0 = (sample1 - 1 + delayBufferLength) % delayBufferLength;
@@ -377,7 +387,7 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
 
                 interpolatedSample = delayData[sample1] - 0.25f * fraction * a2 * (delayData[sample0] - delayData[sample2]);
             }
-            else if (interpolP == kCubic) {
+            else if (interpol == kCubic) {
 
                 // Cubic interpolation will produce cleaner results at the expense
                 // of more computation. This code uses the Catmull-Rom variant of
@@ -408,7 +418,7 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             // included in what gets stored in the buffer, otherwise it's just a simple delay line
             // of the input signal.
 
-            delayData[dpw] = in + (interpolatedSample * fbP);
+            delayData[dpw] = in + (interpolatedSample * fb);
 
             // Increment the write pointer at a constant rate. The read pointer will move at different
             // rates depending on the settings of the LFO, the delay and the sweep width.
@@ -417,12 +427,12 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
                 dpw = 0;
 
             // Store the output sample in the buffer, replacing the input
-            channelData[i] = in + gP * interpolatedSample;
+            channelData[i] = in + g * interpolatedSample;
 
             //delayBuffer.setSample(channel, dpw, in + gP * interpolatedSample);
 
             // Update the LFO phase, keeping it in the range 0-1
-            ph += speedP * inverseSampleRate;
+            ph += speed * inverseSampleRate;
 
             if (ph >= 1.0)
                 ph -= 1.0;
@@ -439,6 +449,7 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
 
     delayBufferWrite = dpw;
     lfoPhase = channel0EndPhase;
+
 }
 //==============================================================================
 
