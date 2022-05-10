@@ -10,6 +10,7 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "LFOSliders.h"
 
 //==============================================================================
 /**
@@ -28,21 +29,7 @@ private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     FlangerAudioProcessor& audioProcessor;
-
-    juce::Slider sweepSlider;
-    juce::Label sweepLabel;
-
-    juce::Slider speedSlider;
-    juce::Label speedLabel;
-
-    juce::Slider delaySlider;
-    juce::Label delayLabel;
-
-    juce::Slider fbSlider;
-    juce::Label fbLabel;
-
-    juce::Slider phaseKnob;
-    juce::Label phaseLabel;
+    LFOSliders sliders;
 
     juce::ComboBox waveSelector;
     juce::Label waveSelectorLabel;
@@ -55,7 +42,7 @@ private:
     juce::Slider wetDrySlider;
     juce::Label wetDryLabel;
 
-    juce::Label diagnosticLabel;
+    juce::TextButton oscView;
 
     void setDiagnosticLabel(float f);
 

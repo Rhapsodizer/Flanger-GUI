@@ -6,6 +6,8 @@
               companyName="BeetleJUCE">
   <MAINGROUP id="EAlnPZ" name="Flanger">
     <GROUP id="{1A0F3F00-C885-3565-04B9-50282146B0E9}" name="Source">
+      <FILE id="reUGWN" name="LFOSliders.cpp" compile="1" resource="0" file="Source/LFOSliders.cpp"/>
+      <FILE id="PYvjv0" name="LFOSliders.h" compile="0" resource="0" file="Source/LFOSliders.h"/>
       <FILE id="sNIYFt" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="QYLnP2" name="PluginProcessor.h" compile="0" resource="0"

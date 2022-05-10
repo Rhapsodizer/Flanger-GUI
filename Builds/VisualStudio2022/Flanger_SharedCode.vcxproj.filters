@@ -445,6 +445,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\Source\LFOSliders.cpp">
+      <Filter>Flanger\Source</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\Source\PluginProcessor.cpp">
       <Filter>Flanger\Source</Filter>
     </ClCompile>
@@ -2562,6 +2565,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Source\LFOSliders.h">
+      <Filter>Flanger\Source</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Source\PluginProcessor.h">
       <Filter>Flanger\Source</Filter>
     </ClInclude>
