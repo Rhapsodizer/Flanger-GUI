@@ -16,7 +16,7 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
 
     // LFO Sweep (Amplitude)
     sweepSlider.setRange(0.0, 1.0);
-    //sweepSlider.setValue(0.7);
+    sweepSlider.setValue(0.7);
     sweepSlider.setSliderStyle(juce::Slider::Rotary);
     sweepSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
     sweepSlider.addListener(this);
@@ -28,7 +28,7 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
 
     // LFO Speed (Frequency)
     speedSlider.setRange(0.0, 10.0);
-    //speedSlider.setValue(5.0);
+    speedSlider.setValue(2.0);
     speedSlider.setSliderStyle(juce::Slider::Rotary);
     speedSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
     speedSlider.addListener(this);
@@ -65,7 +65,6 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
 
     // Delay
     delaySlider.setRange(5.0, 25.0);
-    //delaySlider.setValue(15.0);
     delaySlider.setSliderStyle(juce::Slider::Rotary);
     delaySlider.setTextBoxStyle(juce::Slider::TextBoxAbove, false, 100, 20);
     delaySlider.addListener(this);
@@ -75,9 +74,19 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     addAndMakeVisible(delaySlider);
     addAndMakeVisible(delayLabel);
 
+    // Feedforward gain
+    gSlider.setRange(0.0, 1.0);
+    gSlider.setSliderStyle(juce::Slider::Rotary);
+    gSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
+    gSlider.addListener(this);
+
+    gLabel.setText("Depth", juce::dontSendNotification);
+
+    addAndMakeVisible(gSlider);
+    addAndMakeVisible(gLabel);
+
     // Feedback gain
     fbSlider.setRange(0.0, 0.99);
-    //fbSlider.setValue(0.80);
     fbSlider.setSliderStyle(juce::Slider::Rotary);
     fbSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
     fbSlider.addListener(this);
@@ -154,6 +163,9 @@ void FlangerAudioProcessorEditor::resized()
     fbSlider.setBounds(30, 200, 80, 80);
     fbLabel.setBounds(35, 280, 100, 20);
 
+    gSlider.setBounds(450, 200, 80, 80);
+    gLabel.setBounds(450, 280, 100, 20);
+
     phaseSwitch.setBounds(680, 200, 100, 20);
 
     wetDrySlider.setBounds(150, 450, 500, 80);
@@ -162,8 +174,9 @@ void FlangerAudioProcessorEditor::resized()
 
 void FlangerAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 {
-    if (slider == &sweepSlider) { audioProcessor.setParameter(1, sweepSlider.getValue()); }
-    else if (slider == &speedSlider) { audioProcessor.setParameter(4, speedSlider.getValue()); }
-    else if (slider == &delaySlider) { audioProcessor.setParameter(0, delaySlider.getValue()); }
+    if (slider == &delaySlider) { audioProcessor.setParameter(0, delaySlider.getValue()); }
+    else if (slider == &sweepSlider) { audioProcessor.setParameter(1, sweepSlider.getValue()); }
+    else if (slider == &gSlider) { audioProcessor.setParameter(2, gSlider.getValue()); }
     else if (slider == &fbSlider) { audioProcessor.setParameter(3, fbSlider.getValue()); }
+    else if (slider == &speedSlider) { audioProcessor.setParameter(4, speedSlider.getValue()); }
 }

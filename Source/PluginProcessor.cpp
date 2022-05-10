@@ -194,7 +194,6 @@ void FlangerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock
 {
     // Use this method as the place to do any pre-playback initialisation that you need..
 
-    // 10
     // Retrieve the delay buffer length from the sample rate
     delayBufferLength = (int)(2 * sampleRate);
     // non-zero length check
@@ -202,11 +201,11 @@ void FlangerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock
         delayBufferLength = 1;
     }
     // Allocate and initialize the delay buffer
-    delayBuffer.setSize(2, delayBufferLength);
+    delayBuffer.setSize(getTotalNumOutputChannels(), delayBufferLength);
     delayBuffer.clear();
 
     lfoPhase = 0.0;
-    inverseSampleRate = 1.0 / 44100.0;
+    inverseSampleRate = 1.0 / sampleRate;
 
     wave = 0;
     interpol = 0;
@@ -327,7 +326,6 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
         dpw = delayBufferWrite;
         dpr = delayBufferRead;
         ph = lfoPhase;
-        /*
         float speedP = speed;
         float delayP = delay;
         float wetP = wet;
@@ -339,7 +337,6 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
         int interpolP = interpol;
         int waveP = wave;
         int stereoP = stereo;
-        */
 
         // For stereo flanging, keep the channels 90 degrees out of phase with each other
         if (stereo != 0 && channel != 0)
@@ -355,9 +352,8 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             // running the whole equation again, but this format makes the operation clearer.
 
             //FUNZIONE LFO DA IMPLEMENTARE, wave parametro della funzione (mancante)
-            currentDelay = delay + sweep * lfo(ph, wave);
-            dpr = fmodf((float)dpw - (float)(currentDelay * getSampleRate()) + (float)delayBufferLength,
-                (float)delayBufferLength);
+            currentDelay = delayP + sweepP * lfo(ph, waveP);
+            dpr = fmodf((float)dpw - (float)(currentDelay * getSampleRate()) + (float)delayBufferLength, (float)delayBufferLength);
 
             if (dpr < 0)
                 dpr += delayBufferLength;
@@ -418,7 +414,7 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             // included in what gets stored in the buffer, otherwise it's just a simple delay line
             // of the input signal.
 
-            delayData[dpw] = in + (interpolatedSample * fb);
+            delayData[dpw] = in + (interpolatedSample * fbP);
 
             // Increment the write pointer at a constant rate. The read pointer will move at different
             // rates depending on the settings of the LFO, the delay and the sweep width.
@@ -427,12 +423,12 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
                 dpw = 0;
 
             // Store the output sample in the buffer, replacing the input
-            channelData[i] = in + g * interpolatedSample;
+            channelData[i] = in + gP * interpolatedSample;
 
             //delayBuffer.setSample(channel, dpw, in + gP * interpolatedSample);
 
             // Update the LFO phase, keeping it in the range 0-1
-            ph += speed * inverseSampleRate;
+            ph += speedP * inverseSampleRate;
 
             if (ph >= 1.0)
                 ph -= 1.0;
@@ -442,12 +438,12 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
         // Otherwise quadrature phase on multiple channels will create problems.
         if (channel == 0)
             channel0EndPhase = ph;
+
+        delayBufferWrite = dpw;
     }
 
     // Having made a local copy of the state variables for each channel, now transfer the result
     // back to the main state variable so they will be preserved for the next call of processBlock()
-
-    delayBufferWrite = dpw;
     lfoPhase = channel0EndPhase;
 
 }

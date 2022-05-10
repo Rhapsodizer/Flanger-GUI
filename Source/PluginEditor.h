@@ -52,6 +52,9 @@ private:
     juce::Slider wetDrySlider;
     juce::Label wetDryLabel;
 
+    juce::Slider gSlider;
+    juce::Label gLabel;
+
     void sliderValueChanged(juce::Slider* slider) override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FlangerAudioProcessorEditor)
