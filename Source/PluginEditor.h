@@ -10,6 +10,7 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "LFOSliders.h"
 
 //==============================================================================
 /**
@@ -28,18 +29,7 @@ private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     FlangerAudioProcessor& audioProcessor;
-
-    juce::Slider sweepSlider;
-    juce::Label sweepLabel;
-
-    juce::Slider speedSlider;
-    juce::Label speedLabel;
-
-    juce::Slider delaySlider;
-    juce::Label delayLabel;
-
-    juce::Slider fbSlider;
-    juce::Label fbLabel;
+    LFOSliders sliders;
 
     juce::ComboBox waveSelector;
     juce::Label waveSelectorLabel;
@@ -49,17 +39,6 @@ private:
 
     juce::ToggleButton phaseSwitch;
 
-    juce::Slider wetDrySlider;
-    juce::Label wetDryLabel;
-
-    juce::Slider gSlider;
-    juce::Label gLabel;
-
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sweepCall;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> speedCall;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> delayCall;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> fbCall;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> gCall;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> waveSelectorCall;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> interpolSelectorCall;
 
