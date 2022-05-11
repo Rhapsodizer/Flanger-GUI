@@ -254,23 +254,14 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     auto numOutputChannels = getTotalNumOutputChannels();  // How many output channels for our effect?
     const int numSamples = buffer.getNumSamples();          // How many samples in the buffer for this block?
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
-    for (auto i = numInputChannels; i < numOutputChannels; ++i)
-        buffer.clear(i, 0, buffer.getNumSamples());
-
     int channel, dpw; // dpr = delay read pointer; dpw = delay write pointer
-    float dpr, currentDelay, ph;
+    float ph;
     float channel0EndPhase = lfoPhase;
 
     float speedP = apvts.getRawParameterValue("SPEED")->load();
     float delayP = apvts.getRawParameterValue("DELAY")->load() / 1000.0f;
     float fbP = apvts.getRawParameterValue("FB")->load();
-    float sweepP = apvts.getRawParameterValue("SWEEP")->load() * 20 / 1000.0f;
+    float sweepP = apvts.getRawParameterValue("SWEEP")->load() / 1000.0f;
     float gP = apvts.getRawParameterValue("FF")->load();
     int polarityP = polarity;
     int interpolP = apvts.getRawParameterValue("INTERPOL")->load();
@@ -296,12 +287,11 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
         // the next channel.
 
         dpw = delayBufferWrite;
-        dpr = delayBufferRead;
         ph = lfoPhase;
 
         // For stereo flanging, keep the channels 90 degrees out of phase with each other
-        if (stereo != 0 && channel != 0)
-            ph = fmodf(ph + 0.25, 1.0);
+        //if (stereo != 0 && channel != 0)
+        //    ph = fmodf(ph + 0.25, 1.0);
 
         for (int i = 0; i < numSamples; ++i) {
 
@@ -313,8 +303,43 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             // running the whole equation again, but this format makes the operation clearer.
 
             //FUNZIONE LFO DA IMPLEMENTARE, wave parametro della funzione (mancante)
-            currentDelay = delayP + sweepP * lfo(ph, waveP);
-            dpr = fmodf((float)dpw - (float)(currentDelay * getSampleRate()) + (float)delayBufferLength - 3, (float)delayBufferLength);
+            //float currentDelay = delayP + sweepP * lfo(ph, waveP);
+            float currentDelay = 0.0f;
+            switch (waveP)
+            {
+            case kSineWave:
+            {
+                currentDelay = delayP + sweepP * ( 0.5f + 0.5f * sinf(2.0f * 3.14 * ph) );
+                break;
+            }
+
+            case kTrWave: {
+                if (ph < 0.25f)
+                    currentDelay = delayP + sweepP * (0.5f + 2.0f * ph);
+                else if (ph < 0.75f)
+                    currentDelay = delayP + sweepP * (1.0f - 2.0f * (ph - 0.25f));
+                else
+                    currentDelay = delayP + sweepP * (2.0f * (ph - 0.75f));
+                break;
+
+            }
+            case kSqWave: {
+                if (ph < 0.5f)
+                    currentDelay = delayP + sweepP * (1.0f);
+                else
+                    currentDelay = delayP + sweepP * (0.0f);
+                break;
+            }
+            case kSawWave: {
+                if (ph < 0.5f)
+                    currentDelay = delayP + sweepP * (0.5f + ph);
+                else
+                    currentDelay = delayP + sweepP * (ph - 0.5f);
+                break;
+            }
+
+            }
+            float dpr = fmodf((float)dpw - (float)(currentDelay * getSampleRate()) + (float)delayBufferLength - 3, (float)delayBufferLength);
 
             if (dpr < 0)
                 dpr += delayBufferLength;
@@ -406,10 +431,20 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     lfoPhase = channel0EndPhase;
     delayBufferWrite = dpw;
 
+    // In case we have more outputs than inputs, this code clears any output
+    // channels that didn't contain input data, (because these aren't
+    // guaranteed to be empty - they may contain garbage).
+    // This is here to avoid people getting screaming feedback
+    // when they first compile a plugin, but obviously you don't need to keep
+    // this code if your algorithm always overwrites all the output channels.
+    for (auto i = numInputChannels; i < numOutputChannels; ++i)
+        buffer.clear(i, 0, buffer.getNumSamples());
+
 }
 //==============================================================================
 
 // LFO DA IMPLEMENTARE
+/*
 float FlangerAudioProcessor::lfo(int ph, int waveform) {
     float outputWave = 0.0f;
     switch (waveform)
@@ -448,7 +483,7 @@ float FlangerAudioProcessor::lfo(int ph, int waveform) {
     }
     return outputWave;
 }
-
+*/
 //==============================================================================
 bool FlangerAudioProcessor::hasEditor() const
 {
@@ -491,8 +526,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout FlangerAudioProcessor::creat
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("DELAY", "Delay", 5.0f, 25.0f, 15.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FB", "Feedback", 0.0f, 0.99f, 0.5f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FF", "Gain", 0.0f, 1.0f, 1.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterChoice>("WAVE", "Shape", juce::StringArray{ "Sine", "Triangle", "Square", "Sawtooth" }, 0));
-    parameters.push_back(std::make_unique<juce::AudioParameterChoice>("INTERPOL", "Roughness", juce::StringArray{ "Linear", "Quadratic", "Cubic" }, 0));
+    parameters.push_back(std::make_unique<juce::AudioParameterChoice>("WAVE", "Shape", juce::StringArray( "kSineWave", "kTrWave", "kSqWave", "kSawWave"), kSineWave));
+    parameters.push_back(std::make_unique<juce::AudioParameterChoice>("INTERPOL", "Roughness", juce::StringArray( "kLinear", "kQuadratic", "kCubic" ), kLinear));
 
     return { parameters.begin(), parameters.end() };
 }
