@@ -59,7 +59,6 @@ float FlangerAudioProcessor::getParameter(int index)
     }
 }
 
-// Setters functions implementation: (DA COLLEGARE CON EDITOR)
 void FlangerAudioProcessor::setParameter(int index, float newValue) {
     switch (index)
     {
@@ -197,20 +196,24 @@ void FlangerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock
 {
     // Use this method as the place to do any pre-playback initialisation that you need..
 
-    // Retrieve the delay buffer length from the sample rate
+    // Here we get the delay buffer length (in samples): it's the number of samples of the maximum delay achievable by our effect.
+    
     delayBufferLength = (int)((kMaximumDelay + kMaximumSweepWidth) * sampleRate);
-    // non-zero length check
+    
+    // Check to avoid zero-length
     if (delayBufferLength < 1) {
         delayBufferLength = 1;
     }
-    // Allocate and initialize the delay buffer
+    
+    // Inizializing the delay buffer
     delayBuffer.setSize(getTotalNumInputChannels(), delayBufferLength);
     delayBuffer.clear();
-
+    
+    // Inizializing LFO-initial phase
     lfoPhase = 0.0;
     inverseSampleRate = 1.0 / sampleRate;
 
-    // Read and Write pointers initialized
+    // Read and Write pointers initialized: we set delayBufferRead to "1" to avoid problems in retrieving the index of the read-pointer (see below)
     delayBufferRead = 1;
     delayBufferWrite = 0;
 }
@@ -250,60 +253,56 @@ bool FlangerAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) c
 void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
 
-    auto numInputChannels = getTotalNumInputChannels();    // How many input channels for our effect?
-    auto numOutputChannels = getTotalNumOutputChannels();  // How many output channels for our effect?
-    const int numSamples = buffer.getNumSamples();          // How many samples in the buffer for this block?
+    auto numInputChannels = getTotalNumInputChannels();    
+    auto numOutputChannels = getTotalNumOutputChannels();  
+    const int numSamples = buffer.getNumSamples();          
 
-    int channel, dpw; // dpr = delay read pointer; dpw = delay write pointer
+    // Declaration of dpw, dpr (delay pointer write, delay pointer read)
+    int channel, dpw; 
     float ph;
     float channel0EndPhase = lfoPhase;
-
+    
+    // We decided to use the AudioProcessorValueTreeState class to retrieve the parameters of choice of the user, then processed by our plugin.
     float speedP = apvts.getRawParameterValue("SPEED")->load();
-    float delayP = apvts.getRawParameterValue("DELAY")->load() / 1000.0f;
+    // delay in seconds
+    float delayP = apvts.getRawParameterValue("DELAY")->load() / 1000.0f; 
     float fbP = apvts.getRawParameterValue("FB")->load();
+    // sweep in seconds
     float sweepP = apvts.getRawParameterValue("SWEEP")->load() / 1000.0f;
     float gP = apvts.getRawParameterValue("FF")->load();
-    int polarityP = polarity;
     int interpolP = apvts.getRawParameterValue("INTERPOL")->load();
     int waveP = apvts.getRawParameterValue("WAVE")->load();
+    
+    int polarityP = polarity;
     int stereoP = stereo;
 
-    // Go through each channel of audio that's passed in. In this example we apply identical
-    // effects to each channel, regardless of how many input channels there are. For some effects, like
-    // a stereo chorus or panner, you might do something different for each channel.
+    // Going through each channel of audio's passed in.
 
     for (channel = 0; channel < numInputChannels; ++channel)
     {
-        // channelData is an array of length numSamples which contains the audio for one channel
+        // channelInData and channelOutData are two arrays of length numSamples which contains the audio to be processed
         const float* channelInData = buffer.getReadPointer(channel);
         float* channelOutData = buffer.getWritePointer(channel);
 
-        // delayData is the circular buffer for implementing delay on this channel
-        //float* delayData = delayBuffer.getWritePointer(juce::jmin(channel, delayBuffer.getNumChannels() - 1));
+        // delayData is the circular buffer, crucial to process the signal
         float* delayData = delayBuffer.getWritePointer(channel);
-        // Make a temporary copy of any state variables declared in PluginProcessor.h which need to be
-        // maintained between calls to processBlock(). Each channel needs to be processed identically
-        // which means that the activity of processing one channel can't affect the state variable for
-        // the next channel.
+        
+        // Temporary copy of any state variables declared in the header (.h)
 
         dpw = delayBufferWrite;
         ph = lfoPhase;
 
-        // For stereo flanging, keep the channels 90 degrees out of phase with each other
-        //if (stereo != 0 && channel != 0)
-        //    ph = fmodf(ph + 0.25, 1.0);
+        // Signal processing, sample by sample through a for-cycle.
 
         for (int i = 0; i < numSamples; ++i) {
 
             const float in = channelInData[i];
             float interpolatedSample = 0.0;
 
-            // Recalculate the read pointer position with respect to the write pointer. A more efficient
-            // implementation might increment the read pointer based on the derivative of the LFO without
-            // running the whole equation again, but this format makes the operation clearer.
-
-            //FUNZIONE LFO DA IMPLEMENTARE, wave parametro della funzione (mancante)
-            //float currentDelay = delayP + sweepP * lfo(ph, waveP);
+            // Current delay time, at first inizialized and then retrieved as a function of the parameter "delayP" chose by the user plus the instantaneous 
+            // value of the LFO.
+            // The latter is defined as a function of the waveform chose by the user and it's implemented by a switch control.
+            
             float currentDelay = 0.0f;
             switch (waveP)
             {
@@ -339,24 +338,32 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             }
 
             }
+            
+            // Retrieving the read pointer position with respect to the write pointer one (with 3 samples of headroom)
+            
             float dpr = fmodf((float)dpw - (float)(currentDelay * getSampleRate()) + (float)delayBufferLength - 3, (float)delayBufferLength);
-
+            
+            // Check for non-zero dpr
             if (dpr < 0)
                 dpr += delayBufferLength;
-
-            // In this example, the output is the input plus the contents of the delay buffer (weighted by delayMix)
-            // The last term implements a tremolo (variable amplitude) on the whole thing.
+            
+            // If the current read position is a non integer number, it's necessary to interpolate the fractional value by using three different
+            // algorithms: linear, quadratic, cubic. User can select among them through a combobox. Linear interpolation fits a line between
+            // the samples: quadratic fits a parabola and cubic a 3rd order polynomial.
 
             if (interpol == kLinear) {
 
                 // Find the fraction by which the read pointer sits between two
                 // samples and use this to adjust weights of the samples
+                
                 float fraction = dpr - floorf(dpr);
                 int previousSample = (int)floorf(dpr);
                 int nextSample = (previousSample + 1) % delayBufferLength;
                 interpolatedSample = fraction * delayData[nextSample]
                     + (1.0f - fraction) * delayData[previousSample];
             }
+                // Find the peak of the parabola fitting the samples
+            
             else if (interpol == kQuadratic) {
                 int sample1 = (int)floorf(dpr);
                 int sample2 = (sample1 + 1) % delayBufferLength;
@@ -371,11 +378,8 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             }
             else if (interpol == kCubic) {
 
-                // Cubic interpolation will produce cleaner results at the expense
-                // of more computation. This code uses the Catmull-Rom variant of
-                // cubic interpolation. To reduce the load, calculate a few quantities
-                // in advance that will be used several times in the equation:
-
+                // Catmull-Rom variant of cubic interpolation:
+                
                 int sample1 = (int)floorf(dpr);
                 int sample2 = (sample1 + 1) % delayBufferLength;
                 int sample3 = (sample2 + 1) % delayBufferLength;
@@ -396,9 +400,7 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             }
 
 
-            // Store the current information in the delay buffer. With feedback, what we read is
-            // included in what gets stored in the buffer, otherwise it's just a simple delay line
-            // of the input signal.
+            // Store the current information in the delay buffer. 
 
             delayData[dpw] = in + (interpolatedSample * fbP);
 
@@ -411,9 +413,7 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             // Store the output sample in the buffer, replacing the input
             channelOutData[i] = in + gP * interpolatedSample;
 
-            //delayBuffer.setSample(channel, dpw, in + gP * interpolatedSample);
-
-            // Update the LFO phase, keeping it in the range 0-1
+            // Update the LFO phase, normalizing its value in the range 0-1
             ph += speedP * inverseSampleRate;
 
             if (ph >= 1.0)
@@ -426,17 +426,12 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             channel0EndPhase = ph;
     }
 
-    // Having made a local copy of the state variables for each channel, now transfer the result
-    // back to the main state variable so they will be preserved for the next call of processBlock()
+   // Push back the temporary copy of the state variables
     lfoPhase = channel0EndPhase;
     delayBufferWrite = dpw;
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
+    // Clearing any output channels with no input data.
+    
     for (auto i = numInputChannels; i < numOutputChannels; ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
 
