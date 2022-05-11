@@ -441,49 +441,7 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
         buffer.clear(i, 0, buffer.getNumSamples());
 
 }
-//==============================================================================
 
-// LFO DA IMPLEMENTARE
-/*
-float FlangerAudioProcessor::lfo(int ph, int waveform) {
-    float outputWave = 0.0f;
-    switch (waveform)
-    {
-    case kSineWave:
-    {
-        outputWave = 0.5f + 0.5f * sinf(2.0f * 3.14 * ph);
-        break;
-    }
-
-    case kTrWave: {
-        if (ph < 0.25f)
-            outputWave = 0.5f + 2.0f * ph;
-        else if (ph < 0.75f)
-            outputWave = 1.0f - 2.0f * (ph - 0.25f);
-        else
-            outputWave = 2.0f * (ph - 0.75f);
-        break;
-
-    }
-    case kSqWave: {
-        if (ph < 0.5f)
-            outputWave = 1.0f;
-        else
-            outputWave = 0.0f;
-        break;
-    }
-    case kSawWave: {
-        if (ph < 0.5f)
-            outputWave = 0.5f + ph;
-        else
-            outputWave = ph - 0.5f;
-        break;
-    }
-
-    }
-    return outputWave;
-}
-*/
 //==============================================================================
 bool FlangerAudioProcessor::hasEditor() const
 {

@@ -52,7 +52,6 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     waveSelector.addItem("Triangular", 2);
     waveSelector.addItem("Square", 3);
     waveSelector.addItem("Saw", 4);
-    waveSelector.setSelectedId(1);
 
     waveSelectorLabel.setText("LFO Type", juce::dontSendNotification);
 
@@ -63,7 +62,6 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     interpolSelector.addItem("Linear", 1);
     interpolSelector.addItem("Quadratic", 2);
     interpolSelector.addItem("Cubic", 3);
-    interpolSelector.setSelectedId(1);
 
     interpolSelectorLabel.setText("Interpolation", juce::dontSendNotification);
 

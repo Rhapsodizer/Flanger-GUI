@@ -60,9 +60,6 @@ public:
 
     juce::AudioProcessorValueTreeState apvts;
 
-    // LFO function
-    float FlangerAudioProcessor::lfo(int ph, int waveform);
-
     // Declaration of function 
     float getParameter(int index);
     void setParameter(int index, float newValue);
@@ -106,16 +103,16 @@ private:
     enum Waves
     {
         kSineWave = 0,
-        kTrWave,
-        kSqWave,
-        kSawWave
+        kTrWave = 1,
+        kSqWave = 2,
+        kSawWave = 3
     };
 
     enum Interpol
     {
         kLinear = 0,
-        kQuadratic,
-        kCubic
+        kQuadratic = 1,
+        kCubic = 2
     };
 
     float lfoPhase;
