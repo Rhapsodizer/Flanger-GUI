@@ -297,7 +297,7 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
 
         dpw = delayBufferWrite;
         dpr = delayBufferRead;
-        ph = lfoPhase;
+        ph = lfoPhase + speedP;
 
         // For stereo flanging, keep the channels 90 degrees out of phase with each other
         if (stereo != 0 && channel != 0)
@@ -416,7 +416,7 @@ float FlangerAudioProcessor::lfo(int ph, int waveform) {
     {
     case kSineWave:
     {
-        outputWave = 0.5f + 0.5f * sinf(2.0f * 3.14 * ph);
+        outputWave = 1.0f + sinf(2.0f * 3.14 * ph);
         break;
     }
 
