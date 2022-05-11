@@ -31,6 +31,18 @@ private:
     FlangerAudioProcessor& audioProcessor;
     LFOSliders sliders;
 
+    juce::Slider delaySlider;
+    juce::Label delayLabel;
+
+    juce::Slider fbSlider;
+    juce::Label fbLabel;
+
+    juce::Slider wetDrySlider;
+    juce::Label wetDryLabel;
+
+    juce::Slider gSlider;
+    juce::Label gLabel;
+
     juce::ComboBox waveSelector;
     juce::Label waveSelectorLabel;
 
@@ -41,6 +53,9 @@ private:
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> waveSelectorCall;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> interpolSelectorCall;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> delayCall;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> fbCall;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> gCall;
 
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FlangerAudioProcessorEditor)

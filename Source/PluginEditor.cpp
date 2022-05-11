@@ -19,6 +19,32 @@ float scaleUI = 1.0f;  // this can be 0.5, 0.666 or 1.0
 FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p), sliders(p)
 {
+    // Delay
+    delaySlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    delaySlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
+
+    delayLabel.setText("Delay/Amount", juce::dontSendNotification);
+
+    addAndMakeVisible(delaySlider);
+    addAndMakeVisible(delayLabel);
+
+    // Feedforward gain
+    gSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    gSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
+
+    gLabel.setText("Depth", juce::dontSendNotification);
+
+    addAndMakeVisible(gSlider);
+    addAndMakeVisible(gLabel);
+
+    // Feedback gain
+    fbSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    fbSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
+
+    fbLabel.setText("Feedback", juce::dontSendNotification);
+
+    addAndMakeVisible(fbSlider);
+    addAndMakeVisible(fbLabel);
     addAndMakeVisible(sliders);
 
     // LFO wave form selector
@@ -60,6 +86,9 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
 
     waveSelectorCall = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.apvts, "WAVE", waveSelector);
     interpolSelectorCall = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.apvts, "INTERPOL", interpolSelector);
+    delayCall = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "DELAY", delaySlider);
+    fbCall = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "FB", fbSlider);
+    gCall = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "FF", gSlider);
 
 
 }
@@ -77,6 +106,9 @@ void FlangerAudioProcessorEditor::paint(juce::Graphics& g)
     // Label colors
     getLookAndFeel().setColour(juce::Label::textColourId, juce::Colours::white);
 
+    // Slider colors
+    getLookAndFeel().setColour(juce::Slider::thumbColourId, juce::Colours::red);
+
     g.setColour(juce::Colours::white);
     g.setFont(18.0f);
 }
@@ -89,6 +121,21 @@ void FlangerAudioProcessorEditor::resized()
     externalFlex.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
     externalFlex.flexDirection = juce::FlexBox::Direction::row;
 
+    juce::FlexBox sliderFlex;
+    sliderFlex.flexWrap = juce::FlexBox::Wrap::wrap;
+    sliderFlex.justifyContent = juce::FlexBox::JustifyContent::flexStart;
+    sliderFlex.flexDirection = juce::FlexBox::Direction::column;
+
+    sliderFlex.items.add(juce::FlexItem(delayLabel).withMinHeight(50.0f).withMinWidth(50.0f).withMaxHeight(80.0f).withFlex(1, 1));
+    sliderFlex.items.add(juce::FlexItem(delaySlider).withMinHeight(50.0f).withMinWidth(50.0f).withMaxHeight(50.0f).withFlex(1, 1));
+
+    sliderFlex.items.add(juce::FlexItem(gLabel).withMinHeight(50.0f).withMinWidth(50.0f).withMaxHeight(80.0f).withFlex(1, 1));
+    sliderFlex.items.add(juce::FlexItem(gSlider).withMinHeight(50.0f).withMinWidth(50.0f).withMaxHeight(50.0f).withFlex(1, 1));
+
+    sliderFlex.items.add(juce::FlexItem(fbLabel).withMinHeight(50.0f).withMinWidth(50.0f).withMaxHeight(80.0f).withFlex(1, 1));
+    sliderFlex.items.add(juce::FlexItem(fbSlider).withMinHeight(50.0f).withMinWidth(50.0f).withMaxHeight(50.0f).withFlex(1, 1));
+    sliderFlex.performLayout(getLocalBounds().reduced(4, 4).toFloat());
+    sliderFlex.items.add(juce::FlexItem(sliders).withFlex(2, 0));
 
     
     juce::FlexBox sideBar;
@@ -107,7 +154,7 @@ void FlangerAudioProcessorEditor::resized()
     sideBar.items.add(juce::FlexItem(bottomSpace).withMinHeight(50.0f).withFlex(5, 1));
     sideBar.performLayout(getLocalBounds().reduced(16, 16).toFloat());
 
-    externalFlex.items.add(juce::FlexItem(sliders).withFlex(5, 0));
+    externalFlex.items.add(juce::FlexItem(sliderFlex).withFlex(5, 0));
     externalFlex.items.add(juce::FlexItem(sideBar).withFlex(1, 0));
     externalFlex.performLayout(getLocalBounds().reduced(4, 8).toFloat());
 
