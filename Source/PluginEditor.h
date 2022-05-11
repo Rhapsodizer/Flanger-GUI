@@ -14,7 +14,7 @@
 //==============================================================================
 /**
 */
-class FlangerAudioProcessorEditor : public juce::AudioProcessorEditor, private juce::Slider::Listener
+class FlangerAudioProcessorEditor : public juce::AudioProcessorEditor
 {
 public:
     FlangerAudioProcessorEditor(FlangerAudioProcessor&);
@@ -28,8 +28,6 @@ private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     FlangerAudioProcessor& audioProcessor;
-
-    //juce::AudioProcessorValueTreeState::ParameterLayout createParameters();
 
     juce::Slider sweepSlider;
     juce::Label sweepLabel;
@@ -65,7 +63,6 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> waveSelectorCall;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> interpolSelectorCall;
 
-    void sliderValueChanged(juce::Slider* slider) override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FlangerAudioProcessorEditor)
 };

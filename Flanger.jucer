@@ -6,6 +6,8 @@
               pluginVST3Category="Delay,Fx,Modulation">
   <MAINGROUP id="D8yfN5" name="Flanger">
     <GROUP id="{436D1DBA-AE13-EA4B-B354-E85888246013}" name="Source">
+      <FILE id="dxMiKH" name="LFOSliders.cpp" compile="1" resource="0" file="Source/LFOSliders.cpp"/>
+      <FILE id="ydWuUY" name="LFOSliders.h" compile="0" resource="0" file="Source/LFOSliders.h"/>
       <FILE id="s95wC0" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="tXDxhj" name="PluginProcessor.h" compile="0" resource="0"

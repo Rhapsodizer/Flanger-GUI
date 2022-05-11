@@ -9,15 +9,19 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+
+const int GUI_WIDTH = 800;
+const int GUI_HEIGHT = 720;
+float scaleUI = 1.0f;  // this can be 0.5, 0.666 or 1.0
+
 //==============================================================================
 FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
 
     // LFO Sweep (Amplitude)
-    sweepSlider.setSliderStyle(juce::Slider::Rotary);
+    sweepSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     sweepSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
-    sweepSlider.addListener(this);
 
     sweepLabel.setText("Sweep", juce::dontSendNotification);
 
@@ -25,9 +29,8 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     addAndMakeVisible(sweepLabel);
 
     // LFO Speed (Frequency)
-    speedSlider.setSliderStyle(juce::Slider::Rotary);
+    speedSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     speedSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
-    speedSlider.addListener(this);
 
     speedLabel.setText("Speed", juce::dontSendNotification);
 
@@ -39,7 +42,6 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     waveSelector.addItem("Tri", 2);
     waveSelector.addItem("Sqr", 3);
     waveSelector.addItem("Saw", 4);
-    //waveSelector.onChange = [this] { audioProcessor.setParameter(5, waveSelector.getSelectedId()-1); };
     waveSelector.setSelectedId(1);
 
     waveSelectorLabel.setText("LFO Type", juce::dontSendNotification);
@@ -51,7 +53,6 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     interpolSelector.addItem("Lin", 1);
     interpolSelector.addItem("Sqr", 2);
     interpolSelector.addItem("Cub", 3);
-    //interpolSelector.onChange = [this] { audioProcessor.setParameter(6, interpolSelector.getSelectedId()-1); };
     interpolSelector.setSelectedId(1);
 
     interpolSelectorLabel.setText("Interpolation", juce::dontSendNotification);
@@ -60,9 +61,8 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     addAndMakeVisible(interpolSelectorLabel);
 
     // Delay
-    delaySlider.setSliderStyle(juce::Slider::Rotary);
-    delaySlider.setTextBoxStyle(juce::Slider::TextBoxAbove, false, 100, 20);
-    delaySlider.addListener(this);
+    delaySlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    delaySlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
 
     delayLabel.setText("Delay/Amount", juce::dontSendNotification);
 
@@ -70,9 +70,8 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     addAndMakeVisible(delayLabel);
 
     // Feedforward gain
-    gSlider.setSliderStyle(juce::Slider::Rotary);
+    gSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     gSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
-    gSlider.addListener(this);
 
     gLabel.setText("Depth", juce::dontSendNotification);
 
@@ -80,9 +79,8 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     addAndMakeVisible(gLabel);
 
     // Feedback gain
-    fbSlider.setSliderStyle(juce::Slider::Rotary);
+    fbSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     fbSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
-    fbSlider.addListener(this);
 
     fbLabel.setText("Feedback", juce::dontSendNotification);
 
@@ -99,16 +97,20 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     // wet = 0, dry = 1
     wetDrySlider.setRange(0.0, 1.0);
     //wetDrySlider.setValue(1.0);
-    wetDrySlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 100, 20);
-    wetDrySlider.addListener(this);
+    wetDrySlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
     wetDryLabel.setText("Wet/Dry", juce::dontSendNotification);
 
     addAndMakeVisible(wetDrySlider);
     addAndMakeVisible(wetDryLabel);
 
     // Window size
-    setSize(800, 600);
+    // Resizable vertically and horizonally
+    setResizable(true, true);
+    // min width, min height, max width, max height
+    setResizeLimits(GUI_WIDTH * scaleUI / 1.5, GUI_HEIGHT * scaleUI, GUI_WIDTH * scaleUI * 3, GUI_HEIGHT * scaleUI * 3);
+    setSize(GUI_WIDTH * scaleUI, GUI_HEIGHT * scaleUI);
 
+    // Parameters
     sweepCall = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "SWEEP", sweepSlider);
     speedCall = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "SPEED", speedSlider);
     delayCall = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "DELAY", delaySlider);
@@ -116,6 +118,8 @@ FlangerAudioProcessorEditor::FlangerAudioProcessorEditor(FlangerAudioProcessor& 
     gCall = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "FF", gSlider);
     waveSelectorCall = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.apvts, "WAVE", waveSelector);
     interpolSelectorCall = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(audioProcessor.apvts, "INTERPOL", interpolSelector);
+
+
 }
 
 FlangerAudioProcessorEditor::~FlangerAudioProcessorEditor()
@@ -128,8 +132,8 @@ void FlangerAudioProcessorEditor::paint(juce::Graphics& g)
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
 
-    g.fillRect(200, 100, 400, 150);
-    g.drawText("This should be an audio visualiser:", 200, 70, 400, 20, juce::Justification::centred, true);
+    //g.fillRect(200, 100, 400, 150);
+    //g.drawText("This should be an audio visualiser:", 200, 70, 400, 20, juce::Justification::centred, true);
 
     // Slider colors
     getLookAndFeel().setColour(juce::Slider::thumbColourId, juce::Colours::red);
@@ -144,40 +148,53 @@ void FlangerAudioProcessorEditor::paint(juce::Graphics& g)
 
 void FlangerAudioProcessorEditor::resized()
 {
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
-    sweepSlider.setBounds(200, 300, 100, 100);
-    sweepLabel.setBounds(225, 400, 50, 20);
+    // Component layout
+    juce::FlexBox externalFlex;
+    externalFlex.flexWrap = juce::FlexBox::Wrap::wrap;
+    externalFlex.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
+    externalFlex.flexDirection = juce::FlexBox::Direction::row;
 
-    speedSlider.setBounds(500, 300, 100, 100);
-    speedLabel.setBounds(525, 400, 50, 20);
+    juce::FlexBox sliderBox;
+    sliderBox.flexWrap = juce::FlexBox::Wrap::wrap;
+    sliderBox.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
+    sliderBox.flexDirection = juce::FlexBox::Direction::column;
 
-    waveSelector.setBounds(350, 300, 100, 20);
-    waveSelectorLabel.setBounds(350, 320, 100, 20);
+    sliderBox.items.add(juce::FlexItem(sweepLabel).withMinHeight(50.0f).withMinWidth(50.0f).withFlex(1, 1));
+    sliderBox.items.add(juce::FlexItem(sweepSlider).withMinHeight(50.0f).withMinWidth(50.0f).withFlex(1, 1));
 
-    interpolSelector.setBounds(680, 50, 100, 20);
-    interpolSelectorLabel.setBounds(680, 20, 100, 20);
+    sliderBox.items.add(juce::FlexItem(speedLabel).withMinHeight(50.0f).withMinWidth(50.0f).withFlex(1, 1));
+    sliderBox.items.add(juce::FlexItem(speedSlider).withMinHeight(50.0f).withMinWidth(50.0f).withFlex(1, 1));
 
-    delaySlider.setBounds(20, 50, 100, 100);
-    delayLabel.setBounds(20, 20, 100, 20);
+    sliderBox.items.add(juce::FlexItem(delayLabel).withMinHeight(50.0f).withMinWidth(50.0f).withFlex(1, 1));
+    sliderBox.items.add(juce::FlexItem(delaySlider).withMinHeight(50.0f).withMinWidth(50.0f).withFlex(1, 1));
 
-    fbSlider.setBounds(30, 200, 80, 80);
-    fbLabel.setBounds(35, 280, 100, 20);
+    sliderBox.items.add(juce::FlexItem(fbLabel).withMinHeight(50.0f).withMinWidth(50.0f).withFlex(1, 1));
+    sliderBox.items.add(juce::FlexItem(fbSlider).withMinHeight(50.0f).withMinWidth(50.0f).withFlex(1, 1));
+    
+    sliderBox.items.add(juce::FlexItem(gLabel).withMinHeight(50.0f).withMinWidth(50.0f).withFlex(1, 1));
+    sliderBox.items.add(juce::FlexItem(gSlider).withMinHeight(50.0f).withMinWidth(50.0f).withFlex(1, 1));
+    
+    sliderBox.items.add(juce::FlexItem(wetDryLabel).withMinHeight(50.0f).withMinWidth(50.0f).withFlex(1, 1));
+    sliderBox.items.add(juce::FlexItem(wetDrySlider).withMinHeight(50.0f).withMinWidth(50.0f).withFlex(1, 1));
 
-    gSlider.setBounds(450, 200, 80, 80);
-    gLabel.setBounds(450, 280, 100, 20);
+    sliderBox.performLayout(getLocalBounds().reduced(10, 16).toFloat());
+    
+    juce::FlexBox sideBar;
+    sideBar.flexWrap = juce::FlexBox::Wrap::wrap;
+    sideBar.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
+    sideBar.flexDirection = juce::FlexBox::Direction::column;
 
-    phaseSwitch.setBounds(680, 200, 100, 20);
+    sideBar.items.add(juce::FlexItem(waveSelectorLabel).withMinHeight(50.0f).withMinWidth(50.0f).withMaxHeight(120.0f).withFlex(1, 1));
+    sideBar.items.add(juce::FlexItem(waveSelector).withMinHeight(50.0f).withMinWidth(50.0f).withMaxHeight(120.0f).withFlex(1, 1));
 
-    wetDrySlider.setBounds(150, 450, 500, 80);
-    wetDryLabel.setBounds(330, 480, 300, 80);
-}
+    sideBar.items.add(juce::FlexItem(interpolSelectorLabel).withMinHeight(50.0f).withMinWidth(50.0f).withMaxHeight(120.0f).withFlex(1, 1));
+    sideBar.items.add(juce::FlexItem(interpolSelector).withMinHeight(50.0f).withMinWidth(50.0f).withMaxHeight(120.0f).withFlex(1, 1));
 
-void FlangerAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
-{
-    //if (slider == &delaySlider) { audioProcessor.setParameter(0, delaySlider.getValue()); }
-    //else if (slider == &sweepSlider) { audioProcessor.setParameter(1, sweepSlider.getValue()); }
-    //else if (slider == &gSlider) { audioProcessor.setParameter(2, gSlider.getValue()); }
-    //else if (slider == &fbSlider) { audioProcessor.setParameter(3, fbSlider.getValue()); }
-    //else if (slider == &speedSlider) { audioProcessor.setParameter(4, speedSlider.getValue()); }
+    sideBar.items.add(juce::FlexItem(phaseSwitch).withMinHeight(50.0f).withMinWidth(80.0f).withFlex(1, 1));
+    sideBar.performLayout(getLocalBounds().reduced(10, 16).toFloat());
+
+    externalFlex.items.add(juce::FlexItem(sliderBox).withFlex(5, 0));
+    externalFlex.items.add(juce::FlexItem(sideBar).withFlex(1, 0));
+    externalFlex.performLayout(getLocalBounds().reduced(10, 16).toFloat());
+
 }
