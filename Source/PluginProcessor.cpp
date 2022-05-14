@@ -197,18 +197,18 @@ void FlangerAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock
     // Use this method as the place to do any pre-playback initialisation that you need..
 
     // Here we get the delay buffer length (in samples): it's the number of samples of the maximum delay achievable by our effect.
-    
+
     delayBufferLength = (int)((kMaximumDelay + kMaximumSweepWidth) * sampleRate);
-    
+
     // Check to avoid zero-length
     if (delayBufferLength < 1) {
         delayBufferLength = 1;
     }
-    
+
     // Inizializing the delay buffer
     delayBuffer.setSize(getTotalNumInputChannels(), delayBufferLength);
     delayBuffer.clear();
-    
+
     // Inizializing LFO-initial phase
     lfoPhase = 0.0;
     inverseSampleRate = 1.0 / sampleRate;
@@ -253,25 +253,25 @@ bool FlangerAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) c
 void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
 
-    auto numInputChannels = getTotalNumInputChannels();    
-    auto numOutputChannels = getTotalNumOutputChannels();  
-    const int numSamples = buffer.getNumSamples();          
+    auto numInputChannels = getTotalNumInputChannels();
+    auto numOutputChannels = getTotalNumOutputChannels();
+    const int numSamples = buffer.getNumSamples();
 
     // Declaration of dpw, dpr (delay pointer write, delay pointer read)
-    int channel, dpw; 
+    int channel, dpw;
     float ph;
     float channel0EndPhase = lfoPhase;
-    
+
     // We decided to use the AudioProcessorValueTreeState class to retrieve the parameters of choice of the user, then processed by our plugin.
     float speedP = apvts.getRawParameterValue("SPEED")->load();
     float delayP = apvts.getRawParameterValue("DELAY")->load() / 1000.0f; // delay in seconds
     float fbP = apvts.getRawParameterValue("FB")->load();
-    float sweepP = apvts.getRawParameterValue("SWEEP")->load() / 1000.0f; // sweep in seconds
+    float sweepP = apvts.getRawParameterValue("SWEEP")->load() / 1000.0f * 5.0f; // sweep in seconds
     float gP = apvts.getRawParameterValue("FF")->load();
     int interpolP = apvts.getRawParameterValue("INTERPOL")->load();
     int waveP = apvts.getRawParameterValue("WAVE")->load();
-    
-    int polarityP = polarity;
+
+    int polarityP = apvts.getRawParameterValue("PHASE")->load();
     int stereoP = stereo;
 
     // Going through each channel of audio's passed in.
@@ -284,7 +284,7 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
 
         // delayData is the circular buffer, crucial to process the signal
         float* delayData = delayBuffer.getWritePointer(channel);
-        
+
         // Temporary copy of any state variables declared in the header (.h)
 
         dpw = delayBufferWrite;
@@ -300,13 +300,13 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             // Current delay time, at first inizialized and then retrieved as a function of the parameter "delayP" chose by the user plus the instantaneous 
             // value of the LFO.
             // The latter is defined as a function of the waveform chose by the user and it's implemented by a switch control.
-            
+
             float currentDelay = 0.0f;
             switch (waveP)
             {
             case kSineWave:
             {
-                currentDelay = delayP + sweepP * ( 0.5f + 0.5f * sinf(2.0f * 3.14 * ph) );
+                currentDelay = delayP + sweepP * (0.5f + 0.5f * sinf(2.0f * 3.14 * ph));
                 break;
             }
 
@@ -336,16 +336,16 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             }
 
             }
-            
+
             // Retrieving the read pointer position with respect to the write pointer one (with 3 samples of headroom)
-            
+
             float dpr = fmodf((float)dpw - (float)(currentDelay * getSampleRate()) + (float)delayBufferLength - 3, (float)delayBufferLength);
-            
+
             // Check for non-zero dpr
             if (dpr < 0)
                 dpr += delayBufferLength;
-            
-            // If the current read position is a non integer number, it's mandatory to interpolate the fractional value by using three different
+
+            // If the current read position is a non integer number, it's necessary to interpolate the fractional value by using three different
             // algorithms: linear, quadratic, cubic. User can select among them through a combobox. Linear interpolation fits a line between
             // the samples: quadratic fits a parabola and cubic a 3rd order polynomial.
 
@@ -353,15 +353,15 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
 
                 // Find the fraction by which the read pointer sits between two
                 // samples and use this to adjust weights of the samples
-                
+
                 float fraction = dpr - floorf(dpr);
                 int previousSample = (int)floorf(dpr);
                 int nextSample = (previousSample + 1) % delayBufferLength;
                 interpolatedSample = fraction * delayData[nextSample]
                     + (1.0f - fraction) * delayData[previousSample];
             }
-                // Find the peak of the parabola fitting the samples
-            
+            // Find the peak of the parabola fitting the samples
+
             else if (interpol == kQuadratic) {
                 int sample1 = (int)floorf(dpr);
                 int sample2 = (sample1 + 1) % delayBufferLength;
@@ -377,7 +377,7 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             else if (interpol == kCubic) {
 
                 // Catmull-Rom variant of cubic interpolation:
-                
+
                 int sample1 = (int)floorf(dpr);
                 int sample2 = (sample1 + 1) % delayBufferLength;
                 int sample3 = (sample2 + 1) % delayBufferLength;
@@ -409,7 +409,8 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
                 dpw = 0;
 
             // Store the output sample in the buffer, replacing the input
-            channelOutData[i] = in + gP * interpolatedSample;
+            if (polarityP == 0) channelOutData[i] = in + gP * interpolatedSample * 1;
+            else if (polarityP == 1) channelOutData[i] = in + gP * interpolatedSample * (-1);
 
             // Update the LFO phase, normalizing its value in the range 0-1
             ph += speedP * inverseSampleRate;
@@ -424,12 +425,12 @@ void FlangerAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
             channel0EndPhase = ph;
     }
 
-   // Push back the temporary copy of the state variables
+    // Push back the temporary copy of the state variables
     lfoPhase = channel0EndPhase;
     delayBufferWrite = dpw;
 
     // Clearing any output channels with no input data.
-    
+
     for (auto i = numInputChannels; i < numOutputChannels; ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
 
@@ -477,8 +478,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout FlangerAudioProcessor::creat
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("DELAY", "Delay", 5.0f, 25.0f, 15.0f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FB", "Feedback", 0.0f, 0.99f, 0.5f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("FF", "Gain", 0.0f, 1.0f, 1.0f));
-    parameters.push_back(std::make_unique<juce::AudioParameterChoice>("WAVE", "Shape", juce::StringArray( "kSineWave", "kTrWave", "kSqWave", "kSawWave"), kSineWave));
-    parameters.push_back(std::make_unique<juce::AudioParameterChoice>("INTERPOL", "Roughness", juce::StringArray( "kLinear", "kQuadratic", "kCubic" ), kLinear));
+    parameters.push_back(std::make_unique<juce::AudioParameterChoice>("WAVE", "Shape", juce::StringArray("kSineWave", "kTrWave", "kSqWave", "kSawWave"), kSineWave));
+    parameters.push_back(std::make_unique<juce::AudioParameterChoice>("INTERPOL", "Roughness", juce::StringArray("kLinear", "kQuadratic", "kCubic"), kLinear));
+    parameters.push_back(std::make_unique<juce::AudioParameterInt>("PHASE", "Phase", 0, 1, 0));
 
     return { parameters.begin(), parameters.end() };
 }
